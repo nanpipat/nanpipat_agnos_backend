@@ -27,7 +27,7 @@ func APIRun() {
 		})
 	})
 
-	password.NewPasswordHTTP(r, db)
+	password.NewPasswordHTTP(r)
 
 	if err := r.Run(":" + cfg.Port); err != nil {
 		panic(err)

@@ -23,8 +23,8 @@ func TestCalculateSteps(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := CalculateSteps(tt.password); got != tt.want {
-				t.Errorf("CalculateSteps() = %v, want %v", got, tt.want)
+			if got := calculateSteps(tt.password); got != tt.want {
+				t.Errorf("calculateSteps() = %v, want %v", got, tt.want)
 			}
 		})
 	}

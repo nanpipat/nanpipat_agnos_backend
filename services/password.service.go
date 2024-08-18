@@ -23,7 +23,7 @@ func NewPasswordService(ctx core.IContext) IPasswordService {
 }
 
 func (s *passwordService) LogPasswordCheck(payload *requests.PasswordRequest) (*views.PasswordResponse, error) {
-	steps := CalculateSteps(payload.InitPassword)
+	steps := calculateSteps(payload.InitPassword)
 
 	logs := &models.PasswordLog{
 		BaseModel: models.NewBaseModel(),
@@ -36,14 +36,23 @@ func (s *passwordService) LogPasswordCheck(payload *requests.PasswordRequest) (*
 		return nil, err
 	}
 
-	response := &views.PasswordResponse{
-		NumOfSteps: steps,
+	// ส่ง response ผ่านการเรียกจาก db เพื่อเช็คการทำงานของ db ว่าถูกต้องหรือไม่
+	log, err := repo.New[models.PasswordLog](s.ctx).FindOne("id = ?", logs.ID)
+	if err != nil {
+		return nil, err
 	}
 
-	return response, nil
+	// ถ้าไม่เช็ตจาก db ก็ได้เหมือนกัน ก็จะเป็นแบบนี้ที่ return steps กลับไปเลย
+	// return &views.PasswordResponse{
+	// 	NumOfSteps: steps,
+	// }, nil
+
+	return &views.PasswordResponse{
+		NumOfSteps: log.Response,
+	}, nil
 }
 
-func CalculateSteps(password string) int {
+func calculateSteps(password string) int {
 	lengthSteps := adjustLength(password)
 	charTypeSteps := ensureCharacterTypes(password)
 	repeatSteps := removeRepeatingChars(password)
@@ -52,7 +61,7 @@ func CalculateSteps(password string) int {
 	if n < 6 {
 		return max(lengthSteps, charTypeSteps+repeatSteps)
 	}
-	// สำหรับรหัสผ่านที่ยาวเกิน 20 ตัว เรารวมทุกขั้นตอนเข้าด้วยกัน
+	// สำหรับรหัสผ่านที่ยาวเกิน 20 ตัว รวมทุกขั้นตอนเข้าด้วยกัน
 	return lengthSteps + charTypeSteps + repeatSteps
 }
 
@@ -71,7 +80,7 @@ func adjustLength(password string) int {
 	if n > 20 {
 		return 1 // ต้องลบตัวอักษรให้เหลือ 20 ตัว (นับเป็น 1 ขั้นตอน)
 	}
-	return 0 // ความยาวถูกต้องแล้ว
+	return 0
 }
 
 func ensureCharacterTypes(password string) int {
